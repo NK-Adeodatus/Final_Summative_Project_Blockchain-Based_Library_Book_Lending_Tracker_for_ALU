@@ -1,0 +1,5 @@
+B001|Mastering Blockchain|Imran Bashir
+B002|C Programming Language|Kernighan and Ritchie
+B003|Clean Code|Robert C. Martin
+B004|Introduction to Algorithms|Thomas H. Cormen
+B005|Cryptography Engineering|Niels Ferguson

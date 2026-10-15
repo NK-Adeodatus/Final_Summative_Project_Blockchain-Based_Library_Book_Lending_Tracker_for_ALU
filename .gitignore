@@ -1,0 +1,12 @@
+# Build artifacts
+obj/
+*.o
+alu_blockchain_library
+alu_blockchain_library.exe
+
+# Runtime persistence data
+chain_data/
+
+# OS specific files
+.DS_Store
+Thumbs.db

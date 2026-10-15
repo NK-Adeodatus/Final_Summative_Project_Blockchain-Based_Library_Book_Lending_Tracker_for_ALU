@@ -1,79 +1,264 @@
-# Blockchain-Based Library Book Lending Tracker
+# ALU Blockchain-Based Library Book Lending Tracker
 
-This project is a complete C implementation of a blockchain-based lending ledger for a university library, designed as the summative assessment for the Software Engineering Low-Level Specialization at ALU.
+A decentralized, immutable, and transparent library book lending and token reward ledger built in C (C99) for the African Leadership University (ALU) Software Engineering Low-Level Specialization.
 
-## Compilation Instructions
+Combines the immutable ledger and registries of **Formative 1**, the token-reward and mining simulations of **Formative 2**, and the complete **Summative extensions**: physical copy-level inventory tracking, FIFO reservation queues, real ECDSA digital signatures (`secp256k1`), dual token accounting engines (UTXO and Account models), misuse heuristics, disk persistence, and deep tamper detection.
 
-The project uses a standard `Makefile` configured for Linux environments (like WSL).
+---
 
-1. Open your WSL or Linux terminal.
-2. Navigate to the project root directory.
-3. Run `make` to build the executable.
+## Table of Contents
+- [Features](#features)
+- [Directory Layout](#directory-layout)
+- [Prerequisites & Dependencies](#prerequisites--dependencies)
+- [Compilation & Execution](#compilation--execution)
+- [Automated Verification Suite](#automated-verification-suite)
+- [CLI Command Reference](#cli-command-reference)
+- [Ledger Models (UTXO vs. Account)](#ledger-models-utxo-vs-account)
+- [Proof-of-Work & Mining Simulations](#proof-of-work--mining-simulations)
+- [Security & ECDSA Signatures](#security--ecdsa-signatures)
+- [Disk Persistence & Tamper Detection](#disk-persistence--tamper-detection)
+- [Documentation & Deliverables](#documentation--deliverables)
 
-```bash
-make clean
-make
+---
+
+## Features
+
+1. **Blockchain Data Structures**:
+   - Chained blocks with SHA-256 hash pointers, timestamps, nonces, and miner tags.
+   - **Custom Merkle Tree built from scratch** without external libraries.
+   - Real **ECDSA (`secp256k1`)** digital signatures on every lending transaction.
+2. **Copy-Level Inventory Tracking**:
+   - Availability state machine (`AVAILABLE`, `BORROWED`, `RESERVED`, `LOST`).
+   - Condition tracking (`NEW`, `GOOD`, `WORN`, `LOST`).
+   - Librarian loss override with audit reason codes.
+3. **FIFO Reservation Queue & Fines**:
+   - FIFO title queue when all copies are on loan.
+   - **Automatic copy allocation** to waiting members upon book return.
+   - 14-day loan lifecycle, 7-day renewals (max 2 renewals).
+   - Overdue scanning and fine settlement.
+4. **Dual Token Ledger Engines**:
+   - Return rewards: **10 coins** (on-time), **5 coins** (late), **0 coins** (unreturned).
+   - **UTXO Model**: Unspent outputs, fixed transaction fees (1.0 coin), change outputs, double-spend rejection.
+   - **Account Model**: Direct balance accounting, per-account nonces, linked-list transaction history.
+5. **Mining Simulations (Proof of Work)**:
+   - Configurable difficulty (1 to 4 leading hex zeros).
+   - **Solo Mining**: 50-coin block reward confirmed to single miner.
+   - **Pool Mining**: Proportional reward sharing among $N$ miners with a 2% pool fee.
+   - **Cloud Mining**: Multi-round rental contract simulation with profitability tracking.
+6. **Misuse & Fraud Detection Heuristics**:
+   - Flags excessive borrows ($>3$), rapid re-borrows ($<24\text{h}$), duplicate IDs, and suspicious condition downgrades.
+   - Suspicious requests are withheld from mining until approved or rejected via `fraud_review`.
+7. **Disk Persistence & Tamper Detection**:
+   - Full ledger and cryptographic keys saved to disk across sessions.
+   - Automatic tamper audit validating block hashes, PoW targets, Merkle roots, and ECDSA signatures on reload.
+
+---
+
+## Directory Layout
+
+```text
+├── Makefile                     # Cross-platform build script (Linux / macOS / WSL / Windows)
+├── README.md                    # Project documentation and CLI guide
+├── data/
+│   ├── books.txt                # Initial catalog registry (ID|Title|Author)
+│   ├── members.txt              # Initial student registry (ID|Name|Course)
+│   └── copies.txt               # Physical copy inventory (CopyID|BookID|Condition)
+├── include/
+│   ├── blockchain.h             # Block headers, chain validation, and history logs
+│   ├── cli.h                    # Interactive CLI REPL
+│   ├── crypto.h                 # SHA-256 and ECDSA (secp256k1) key management and signing
+│   ├── ledger.h                 # Dual UTXO and Account-based token ledgers
+│   ├── merkle.h                 # Merkle tree construction from scratch
+│   ├── mining.h                 # Solo, Pool (2% fee table), and Cloud mining simulations
+│   ├── persistence.h            # Plain-text structured disk persistence
+│   ├── pool.h                   # Prioritized pending pool and fraud heuristics
+│   ├── registry.h               # Book, member, and copy inventory models
+│   ├── reservation.h            # Title-level FIFO reservation queues
+│   └── transaction.h            # Lending record structure and serialization
+├── src/
+│   ├── blockchain.c
+│   ├── cli.c
+│   ├── crypto.c
+│   ├── ledger.c
+│   ├── main.c                   # Entry point and auto-reload orchestration
+│   ├── merkle.c
+│   ├── mining.c
+│   ├── persistence.c
+│   ├── pool.c
+│   ├── registry.c
+│   ├── reservation.c
+│   └── transaction.c
+├── test/
+│   └── run_tests.sh             # 8-phase automated verification test suite
+└── docs/
+    ├── TECHNICAL_REPORT.md      # Comprehensive 2500+ word technical report
+    └── DEMO_SCRIPT.md           # Step-by-step 5-10 minute video demonstration script
 ```
 
-The output executable will be named `alu_blockchain_library`. You can run it with:
+---
+
+## Prerequisites & Dependencies
+
+The project is written in standard C (C99) and requires **OpenSSL** (`libssl` and `libcrypto`):
+
+### Linux (Ubuntu / Debian / WSL)
 ```bash
+sudo apt update
+sudo apt install -y build-essential libssl-dev pkg-config
+```
+
+### macOS
+```bash
+brew install openssl
+```
+
+### Windows (Native MinGW-w64 / MSYS2)
+```bash
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-openssl make
+```
+
+---
+
+## Compilation & Execution
+
+The unified `Makefile` automatically detects your operating system and configures paths accordingly:
+
+```bash
+# 1. Clean previous build artifacts
+make clean
+
+# 2. Compile executable
+make
+
+# 3. Launch interactive CLI
 ./alu_blockchain_library
 ```
 
-## Ledger Models (UTXO vs Account)
+---
 
-The system supports two transaction models for managing token rewards:
+## Automated Verification Suite
 
-1. **UTXO Model (Default):** Tracks unspent transaction outputs.
-2. **Account Model:** Direct balance tracking with nonce-based replay protection.
+Run the full automated test suite covering all 8 grading requirement phases:
 
-You can switch between them at runtime in the CLI:
+```bash
+make test
+```
+
+Or directly via shell:
+```bash
+bash test/run_tests.sh
+```
+
+---
+
+## CLI Command Reference
+
+### Membership Management
+| Command | Description |
+| :--- | :--- |
+| `register_member <id> <name> <course>` | Register student and generate ECDSA keypair |
+| `view_member [id]` | Display member profile and on-chain public key |
+| `member_nonce <id>` | Display replay-protection sequence nonce |
+
+### Book & Copy Management
+| Command | Description |
+| :--- | :--- |
+| `register_book <id> <title> <author>` | Register book title into catalog |
+| `view_book [id]` | Display catalog titles and availability |
+| `add_copy <copy_id> <book_id> <cond>` | Add physical copy (`NEW`, `GOOD`, `WORN`) |
+| `view_copy [copy_id]` | Display inventory states and active holders |
+| `mark_lost <copy_id> <reason_code>` | Librarian override to mark copy `LOST` |
+
+### Lending Operations
+| Command | Description |
+| :--- | :--- |
+| `borrow_book <book_id> <copy_id> <member>` | Sign and submit borrow request to pool |
+| `return_book <copy_id> <member> [cond] [rc]` | Sign and submit return request (awards coins) |
+| `renew_book <copy_id> <member_id>` | Extend active loan by 7 days (max 2 renewals) |
+| `reserve_book <book_id> <member_id>` | Enqueue for unavailable book title |
+| `reservation_status [book_id]` | View FIFO reservation queues |
+
+### Fines & Overdue
+| Command | Description |
+| :--- | :--- |
+| `check_overdue` | Scan borrowed copies, flag overdue, accrue fines |
+| `view_fines [member_id]` | View outstanding overdue fines |
+| `settle_fine <member_id> <amount>` | Settle overdue fines using reward tokens |
+
+### Token & Ledger Operations
+| Command | Description |
+| :--- | :--- |
+| `token_balance <member_id>` | Check balance in active model |
+| `token_transfer <from> <to> <amount>` | Transfer tokens with fee deduction |
+| `utxo_view` | Inspect active unspent transaction output set |
+| `account_balance <member_id>` | Check balance in Account model |
+| `account_transfer <from> <to> <amount>` | Direct transfer with account nonce check |
+| `account_nonce <member_id>` | View outgoing nonce for Account model |
+| `transaction_history <member_id>` | Traverses linked-list history log |
+| `switch_model <UTXO\|ACCOUNT>` | Switch active transaction engine |
+
+### Blockchain & Mining Operations
+| Command | Description |
+| :--- | :--- |
+| `pool_view` | View prioritized pending requests and flagged items |
+| `mine_solo [miner_id]` | Confirm blocks via Solo Proof of Work |
+| `mine_pool [num_miners]` | Mine as pool with 2% fee and share table |
+| `mine_cloud <rounds> [renter_id]` | Simulate rented cloud contract (1–5 rounds) |
+| `chain_view` | Display blocks, Merkle roots, and signatures |
+| `validate_chain` | Run deep cryptographic audit across full chain |
+| `chain_save` | Serialize current state to `chain_data/blockchain.dat` |
+| `chain_load` | Reload full state from disk and validate |
+| `difficulty_status` | View current PoW difficulty target (1–4) |
+| `set_difficulty <1-4>` | Adjust mining difficulty level |
+
+### Fraud & Audit Operations
+| Command | Description |
+| :--- | :--- |
+| `fraud_review` | Inspect requests flagged by misuse heuristics |
+| `approve_suspicious <request_id>` | Librarian override to approve flagged request |
+| `reject_suspicious <request_id>` | Librarian rejection to discard flagged request |
+| `lending_history` | Complete immutable audit trail of lending events |
+| `member_history <member_id>` | On-chain lending history for specific student |
+| `book_history <book_id>` | On-chain lending history for specific book |
+
+---
+
+## Ledger Models (UTXO vs. Account)
+
+To switch between ledger engines at runtime:
 ```text
 ALU-Library> switch_model UTXO
 ALU-Library> switch_model ACCOUNT
 ```
 
-## Mining Difficulty
+- **UTXO Model (Default)**: Tracks discrete unspent transaction outputs. Transfers require specifying input UTXOs, automatically deduct a 1.0 coin fee, and return any excess as a change UTXO back to the sender. Double-spending is prevented by validating `is_spent`.
+- **Account Model**: Maintains direct member balances with replay protection via sequential nonces. Out-of-order or reused nonces are rejected. Full transaction history is recorded in an in-memory linked list per account.
 
-The Proof-of-Work difficulty is adjustable. It defaults to 2 (hash must start with two '0's).
-To view or change the difficulty:
-```text
-ALU-Library> difficulty_status
-ALU-Library> set_difficulty 3
-```
+---
 
-## Mining Simulations
+## Proof-of-Work & Mining Simulations
 
-You can test three types of mining to confirm pending transactions into a block:
+Mining confirms pending lending requests into permanent blocks:
+- **Solo Mining**: `mine_solo Miner_Alice`
+  Computes PoW for top-priority requests and awards the 50-coin block reward to the designated miner.
+- **Pool Mining**: `mine_pool 4`
+  Simulates 4 miners with variable hash rates, deducts a 2% pool fee (1.0 coin), and renders a distribution table showing attempts, percentage shares, and net rewards.
+- **Cloud Mining**: `mine_cloud 3 M001`
+  Simulates a 3-round hash rental contract (15.0 coins/round), displaying round-by-round and cumulative profit/loss with warning triggers if fees exceed returns.
 
-1. **Solo Mining:** One miner earns the full block reward.
-   ```text
-   ALU-Library> mine_solo
-   ```
-2. **Pool Mining:** Simulates multiple miners sharing the reward proportionally to their simulated hash power, deducting a 2% pool fee.
-   ```text
-   ALU-Library> mine_pool 4
-   ```
-   *(Where 4 is the number of simulated miners)*
-3. **Cloud Mining:** Rent hash power for a given number of rounds and calculate profitability vs fees.
-   ```text
-   ALU-Library> mine_cloud 3
-   ```
-   *(Where 3 is the number of rounds to rent)*
+---
 
-## Dependencies
+## Security & ECDSA Signatures
 
-This project links against the **OpenSSL** library (`libssl` and `libcrypto`).
-- It uses the OpenSSL `EVP` API for **SHA-256** hashing.
-- It uses the OpenSSL `EC_KEY` and `ECDSA` APIs for real cryptographic signatures over the **secp256k1** curve.
+All actions committed to the chain are authenticated with **real ECDSA signatures** over the `secp256k1` curve:
+1. Keys are persisted in `chain_data/keys/<member_id>_priv.pem` and `<member_id>_pub.pem`.
+2. Every request is signed before entering the pool.
+3. Every block computes a custom **Merkle root** from leaf transactions.
+4. `validate_chain` cryptographically verifies previous-hash linkage, PoW difficulty targets, Merkle roots, and ECDSA signatures across all blocks.
 
-To compile successfully, ensure OpenSSL development headers are installed on your Linux/WSL system (e.g., `sudo apt install libssl-dev`).
+---
 
-## Usage Data
+## Documentation & Deliverables
 
-Sample data files are provided in the `data/` directory:
-- `books.txt`: Register of library titles
-- `members.txt`: Register of students/members
-- `copies.txt`: Multi-copy inventory mapping to books
-
-Upon exit using the `exit` command, the chain state is persisted to `chain_data/blockchain.dat`.
+- **Technical Report**: See [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) for the 2500+ word comprehensive design report, state machine diagrams, Merkle trees, and test scenarios.
+- **Demo Video Script**: See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the minute-by-minute 5–10 minute video demonstration walkthrough.

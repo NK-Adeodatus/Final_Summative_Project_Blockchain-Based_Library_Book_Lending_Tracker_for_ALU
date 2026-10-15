@@ -4,6 +4,10 @@ obj/
 alu_blockchain_library
 alu_blockchain_library.exe
 
+# docs
+docs/
+test/
+
 # Runtime persistence data
 chain_data/
 

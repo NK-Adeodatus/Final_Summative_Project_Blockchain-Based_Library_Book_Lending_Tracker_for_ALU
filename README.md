@@ -1,8 +1,6 @@
 # ALU Blockchain-Based Library Book Lending Tracker
 
-A decentralized, immutable, and transparent library book lending and token reward ledger built in C (C99) for the African Leadership University (ALU) Software Engineering Low-Level Specialization.
-
-Combines the immutable ledger and registries of **Formative 1**, the token-reward and mining simulations of **Formative 2**, and the complete **Summative extensions**: physical copy-level inventory tracking, FIFO reservation queues, real ECDSA digital signatures (`secp256k1`), dual token accounting engines (UTXO and Account models), misuse heuristics, disk persistence, and deep tamper detection.
+A decentralized, immutable, and transparent library book lending and token reward ledger built in C (C99) for the African Leadership University (ALU).
 
 ---
 
@@ -17,7 +15,6 @@ Combines the immutable ledger and registries of **Formative 1**, the token-rewar
 - [Proof-of-Work & Mining Simulations](#proof-of-work--mining-simulations)
 - [Security & ECDSA Signatures](#security--ecdsa-signatures)
 - [Disk Persistence & Tamper Detection](#disk-persistence--tamper-detection)
-- [Documentation & Deliverables](#documentation--deliverables)
 
 ---
 
@@ -75,24 +72,19 @@ Combines the immutable ledger and registries of **Formative 1**, the token-rewar
 │   ├── registry.h               # Book, member, and copy inventory models
 │   ├── reservation.h            # Title-level FIFO reservation queues
 │   └── transaction.h            # Lending record structure and serialization
-├── src/
-│   ├── blockchain.c
-│   ├── cli.c
-│   ├── crypto.c
-│   ├── ledger.c
-│   ├── main.c                   # Entry point and auto-reload orchestration
-│   ├── merkle.c
-│   ├── mining.c
-│   ├── persistence.c
-│   ├── pool.c
-│   ├── registry.c
-│   ├── reservation.c
-│   └── transaction.c
-├── test/
-│   └── run_tests.sh             # 8-phase automated verification test suite
-└── docs/
-    ├── TECHNICAL_REPORT.md      # Comprehensive 2500+ word technical report
-    └── DEMO_SCRIPT.md           # Step-by-step 5-10 minute video demonstration script
+└── src/
+    ├── blockchain.c
+    ├── cli.c
+    ├── crypto.c
+    ├── ledger.c
+    ├── main.c                   # Entry point and auto-reload orchestration
+    ├── merkle.c
+    ├── mining.c
+    ├── persistence.c
+    ├── pool.c
+    ├── registry.c
+    ├── reservation.c
+    └── transaction.c
 ```
 
 ---
@@ -136,20 +128,6 @@ make
 
 ---
 
-## Automated Verification Suite
-
-Run the full automated test suite covering all 8 grading requirement phases:
-
-```bash
-make test
-```
-
-Or directly via shell:
-```bash
-bash test/run_tests.sh
-```
-
----
 
 ## CLI Command Reference
 
@@ -257,8 +235,3 @@ All actions committed to the chain are authenticated with **real ECDSA signature
 4. `validate_chain` cryptographically verifies previous-hash linkage, PoW difficulty targets, Merkle roots, and ECDSA signatures across all blocks.
 
 ---
-
-## Documentation & Deliverables
-
-- **Technical Report**: See [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) for the 2500+ word comprehensive design report, state machine diagrams, Merkle trees, and test scenarios.
-- **Demo Video Script**: See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the minute-by-minute 5–10 minute video demonstration walkthrough.

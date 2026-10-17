@@ -1,4 +1,6 @@
 # Build artifacts
+build/
+bin/
 obj/
 *.o
 alu_blockchain_library
@@ -10,6 +12,11 @@ test/
 
 # Runtime persistence data
 chain_data/
+
+# Machine-specific editor/tool files
+compile_commands.json
+.cache/
+.vscode/
 
 # OS specific files
 .DS_Store

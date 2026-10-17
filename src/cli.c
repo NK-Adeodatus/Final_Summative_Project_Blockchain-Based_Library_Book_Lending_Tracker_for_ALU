@@ -163,6 +163,46 @@ static void cmd_settle_fine(const char *member_id, double amount) {
            settled, member_id, m->fines_due);
 }
 
+/* ---------------------------------------------------------------------------
+ * parse_tokens: splits a raw input line into at most MAX_TOKENS tokens.
+ * Tokens wrapped in double-quotes are treated as a single token and the
+ * surrounding quotes are stripped.  Unquoted tokens are delimited by spaces.
+ * Returns the number of tokens found.
+ * -------------------------------------------------------------------------*/
+#define MAX_TOKENS 6
+#define TOKEN_LEN  256
+
+static int parse_tokens(const char *line, char tokens[][TOKEN_LEN], int max_tokens) {
+    int count = 0;
+    const char *p = line;
+
+    while (*p && count < max_tokens) {
+        /* skip leading spaces */
+        while (*p == ' ' || *p == '\t') p++;
+        if (!*p) break;
+
+        char *dst = tokens[count];
+        int  dst_i = 0;
+
+        if (*p == '"') {
+            /* quoted token: consume until closing quote or end-of-string */
+            p++;
+            while (*p && *p != '"' && dst_i < TOKEN_LEN - 1) {
+                dst[dst_i++] = *p++;
+            }
+            if (*p == '"') p++; /* skip closing quote */
+        } else {
+            /* unquoted token: consume until whitespace */
+            while (*p && *p != ' ' && *p != '\t' && dst_i < TOKEN_LEN - 1) {
+                dst[dst_i++] = *p++;
+            }
+        }
+        dst[dst_i] = '\0';
+        if (dst_i > 0) count++;
+    }
+    return count;
+}
+
 void cli_run() {
     char input[512];
     printf("ALU Blockchain Library Tracker initialized.\nType 'help' to view available commands.\n\n");
@@ -178,14 +218,17 @@ void cli_run() {
         trim_whitespace(input);
         if (strlen(input) == 0) continue;
 
-        char cmd[64] = "";
-        char arg1[128] = "";
-        char arg2[128] = "";
-        char arg3[128] = "";
-        char arg4[128] = "";
-
-        int parsed = sscanf(input, "%63s %127s %127s %127s %127s", cmd, arg1, arg2, arg3, arg4);
+        char tokens[MAX_TOKENS][TOKEN_LEN];
+        memset(tokens, 0, sizeof(tokens));
+        int parsed = parse_tokens(input, tokens, MAX_TOKENS);
         if (parsed <= 0) continue;
+
+        /* convenience aliases so the rest of the code is unchanged */
+        char *cmd  = tokens[0];
+        char *arg1 = tokens[1];
+        char *arg2 = tokens[2];
+        char *arg3 = tokens[3];
+        char *arg4 = tokens[4];
 
         /* Exit */
         if (strcmp(cmd, "exit") == 0 || strcmp(cmd, "quit") == 0) {

@@ -1,5 +1,5 @@
-M001|Alice Lwanga|CS101
-M002|Bob Mwangi|SE201
-M003|Charlie Ochieng|CS101
-M004|Diana Kamau|IT301
-M005|Eve Nyarobi|SE201
+M001|Alice Lwanga|BSE
+M002|Bob Mwangi|BSE
+M003|Charlie Ochieng|BEL
+M004|Diana Kamau|BEL
+M005|Eve Nyarobi|BSE

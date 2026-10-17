@@ -41,7 +41,7 @@ void merkle_compute_root(const char leaf_hashes[][SHA256_HEX_LEN], int count, ch
 
         for (int i = 0; i < next_count; i++) {
             char combined[SHA256_HEX_LEN * 2 + 1];
-            snprintf(combined, sizeof(combined), "%s%s", current_hashes[2 * i], current_hashes[2 * i + 1]);
+            snprintf(combined, sizeof(combined), "%.64s%.64s", current_hashes[2 * i], current_hashes[2 * i + 1]);
             sha256_string(combined, next_hashes[i]);
         }
 

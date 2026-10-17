@@ -7,6 +7,20 @@
 PendingPool g_pool;
 static uint32_t s_request_counter = 1000;
 
+static void safe_str_copy(char *dest, const char *src, size_t dest_size) {
+    if (!dest || dest_size == 0) return;
+    if (!src) {
+        dest[0] = '\0';
+        return;
+    }
+    size_t i = 0;
+    while (i + 1 < dest_size && src[i] != '\0') {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+}
+
 void pool_init() {
     memset(&g_pool, 0, sizeof(PendingPool));
 }
@@ -92,10 +106,11 @@ int pool_add_borrow_request(const char *book_id, const char *copy_id, const char
     }
 
     PendingRequest *req = &g_pool.requests[g_pool.count++];
+    memset(req, 0, sizeof(PendingRequest));
     generate_request_id(req->request_id, sizeof(req->request_id), "REQ-BORROW");
-    strncpy(req->book_id, book_id, sizeof(req->book_id) - 1);
-    strncpy(req->copy_id, copy_id, sizeof(req->copy_id) - 1);
-    strncpy(req->member_id, member_id, sizeof(req->member_id) - 1);
+    safe_str_copy(req->book_id, book_id, sizeof(req->book_id));
+    safe_str_copy(req->copy_id, copy_id, sizeof(req->copy_id));
+    safe_str_copy(req->member_id, member_id, sizeof(req->member_id));
     req->action_requested = ACTION_BORROWED;
     req->created_at = time(NULL);
     req->status = STATUS_PENDING;
@@ -103,12 +118,12 @@ int pool_add_borrow_request(const char *book_id, const char *copy_id, const char
     req->suspicious_reason[0] = '\0';
 
     /* Build Lending Record */
-    strncpy(req->record.record_id, req->request_id, sizeof(req->record.record_id) - 1);
-    strncpy(req->record.book_id, b->book_id, sizeof(req->record.book_id) - 1);
-    strncpy(req->record.copy_id, c->copy_id, sizeof(req->record.copy_id) - 1);
-    strncpy(req->record.book_title, b->title, sizeof(req->record.book_title) - 1);
-    strncpy(req->record.member_id, m->member_id, sizeof(req->record.member_id) - 1);
-    strncpy(req->record.member_name, m->full_name, sizeof(req->record.member_name) - 1);
+    safe_str_copy(req->record.record_id, req->request_id, sizeof(req->record.record_id));
+    safe_str_copy(req->record.book_id, b->book_id, sizeof(req->record.book_id));
+    safe_str_copy(req->record.copy_id, c->copy_id, sizeof(req->record.copy_id));
+    safe_str_copy(req->record.book_title, b->title, sizeof(req->record.book_title));
+    safe_str_copy(req->record.member_id, m->member_id, sizeof(req->record.member_id));
+    safe_str_copy(req->record.member_name, m->full_name, sizeof(req->record.member_name));
     req->record.action = ACTION_BORROWED;
     req->record.timestamp = req->created_at;
     req->record.due_date = req->created_at + DEFAULT_LOAN_DURATION_SECONDS;
@@ -121,11 +136,11 @@ int pool_add_borrow_request(const char *book_id, const char *copy_id, const char
     /* Heuristic Checks */
     if (pool_check_excessive_borrows(member_id)) {
         req->status = STATUS_SUSPICIOUS;
-        strncpy(req->suspicious_reason, "Excessive concurrent borrows limit exceeded", sizeof(req->suspicious_reason) - 1);
+        safe_str_copy(req->suspicious_reason, "Excessive concurrent borrows limit exceeded", sizeof(req->suspicious_reason));
         printf("[FRAUD WARNING] Borrow request flagged SUSPICIOUS: %s\n", req->suspicious_reason);
     } else if (pool_check_rapid_reborrow(book_id, member_id)) {
         req->status = STATUS_SUSPICIOUS;
-        strncpy(req->suspicious_reason, "Rapid re-borrow pattern within 24 hours", sizeof(req->suspicious_reason) - 1);
+        safe_str_copy(req->suspicious_reason, "Rapid re-borrow pattern within 24 hours", sizeof(req->suspicious_reason));
         printf("[FRAUD WARNING] Borrow request flagged SUSPICIOUS: %s\n", req->suspicious_reason);
     } else {
         printf("[SUCCESS] Borrow request %s submitted to pending pool.\n", req->request_id);
@@ -155,10 +170,11 @@ int pool_add_return_request(const char *copy_id, const char *member_id, CopyCond
 
     Book *b = registry_find_book(c->book_id);
     PendingRequest *req = &g_pool.requests[g_pool.count++];
+    memset(req, 0, sizeof(PendingRequest));
     generate_request_id(req->request_id, sizeof(req->request_id), "REQ-RETURN");
-    strncpy(req->book_id, c->book_id, sizeof(req->book_id) - 1);
-    strncpy(req->copy_id, copy_id, sizeof(req->copy_id) - 1);
-    strncpy(req->member_id, member_id, sizeof(req->member_id) - 1);
+    safe_str_copy(req->book_id, c->book_id, sizeof(req->book_id));
+    safe_str_copy(req->copy_id, copy_id, sizeof(req->copy_id));
+    safe_str_copy(req->member_id, member_id, sizeof(req->member_id));
     req->action_requested = ACTION_RETURNED;
     req->created_at = time(NULL);
     req->status = STATUS_PENDING;
@@ -176,12 +192,12 @@ int pool_add_return_request(const char *copy_id, const char *member_id, CopyCond
         req->priority = 10;
     }
 
-    strncpy(req->record.record_id, req->request_id, sizeof(req->record.record_id) - 1);
-    strncpy(req->record.book_id, c->book_id, sizeof(req->record.book_id) - 1);
-    strncpy(req->record.copy_id, c->copy_id, sizeof(req->record.copy_id) - 1);
-    strncpy(req->record.book_title, b ? b->title : "Unknown", sizeof(req->record.book_title) - 1);
-    strncpy(req->record.member_id, m->member_id, sizeof(req->record.member_id) - 1);
-    strncpy(req->record.member_name, m->full_name, sizeof(req->record.member_name) - 1);
+    safe_str_copy(req->record.record_id, req->request_id, sizeof(req->record.record_id));
+    safe_str_copy(req->record.book_id, c->book_id, sizeof(req->record.book_id));
+    safe_str_copy(req->record.copy_id, c->copy_id, sizeof(req->record.copy_id));
+    safe_str_copy(req->record.book_title, b ? b->title : "Unknown", sizeof(req->record.book_title));
+    safe_str_copy(req->record.member_id, m->member_id, sizeof(req->record.member_id));
+    safe_str_copy(req->record.member_name, m->full_name, sizeof(req->record.member_name));
     req->record.action = ACTION_RETURNED;
     req->record.timestamp = req->created_at;
     req->record.due_date = c->due_date;
@@ -193,7 +209,7 @@ int pool_add_return_request(const char *copy_id, const char *member_id, CopyCond
     /* Heuristic check for condition manipulation */
     if (pool_check_condition_downgrade(c->condition, returned_cond, override_reason)) {
         req->status = STATUS_SUSPICIOUS;
-        strncpy(req->suspicious_reason, "Condition downgraded > 1 level without librarian override", sizeof(req->suspicious_reason) - 1);
+        safe_str_copy(req->suspicious_reason, "Condition downgraded > 1 level without librarian override", sizeof(req->suspicious_reason));
         printf("[FRAUD WARNING] Return request flagged SUSPICIOUS: %s\n", req->suspicious_reason);
     } else {
         c->condition = returned_cond;
@@ -228,21 +244,22 @@ int pool_add_reserve_request(const char *book_id, const char *member_id) {
 
     if (g_pool.count < MAX_POOL_REQUESTS) {
         PendingRequest *req = &g_pool.requests[g_pool.count++];
+        memset(req, 0, sizeof(PendingRequest));
         generate_request_id(req->request_id, sizeof(req->request_id), "REQ-RESERVE");
-        strncpy(req->book_id, book_id, sizeof(req->book_id) - 1);
-        strncpy(req->copy_id, "ANY", sizeof(req->copy_id) - 1);
-        strncpy(req->member_id, member_id, sizeof(req->member_id) - 1);
+        safe_str_copy(req->book_id, book_id, sizeof(req->book_id));
+        safe_str_copy(req->copy_id, "ANY", sizeof(req->copy_id));
+        safe_str_copy(req->member_id, member_id, sizeof(req->member_id));
         req->action_requested = ACTION_RESERVED;
         req->created_at = now;
         req->status = STATUS_PENDING;
         req->priority = 20;
 
-        strncpy(req->record.record_id, req->request_id, sizeof(req->record.record_id) - 1);
-        strncpy(req->record.book_id, b->book_id, sizeof(req->record.book_id) - 1);
-        strncpy(req->record.copy_id, "QUEUE", sizeof(req->record.copy_id) - 1);
-        strncpy(req->record.book_title, b->title, sizeof(req->record.book_title) - 1);
-        strncpy(req->record.member_id, m->member_id, sizeof(req->record.member_id) - 1);
-        strncpy(req->record.member_name, m->full_name, sizeof(req->record.member_name) - 1);
+        safe_str_copy(req->record.record_id, req->request_id, sizeof(req->record.record_id));
+        safe_str_copy(req->record.book_id, b->book_id, sizeof(req->record.book_id));
+        safe_str_copy(req->record.copy_id, "QUEUE", sizeof(req->record.copy_id));
+        safe_str_copy(req->record.book_title, b->title, sizeof(req->record.book_title));
+        safe_str_copy(req->record.member_id, m->member_id, sizeof(req->record.member_id));
+        safe_str_copy(req->record.member_name, m->full_name, sizeof(req->record.member_name));
         req->record.action = ACTION_RESERVED;
         req->record.timestamp = now;
         req->record.due_date = 0;
@@ -282,10 +299,11 @@ int pool_add_renew_request(const char *copy_id, const char *member_id) {
 
     Book *b = registry_find_book(c->book_id);
     PendingRequest *req = &g_pool.requests[g_pool.count++];
+    memset(req, 0, sizeof(PendingRequest));
     generate_request_id(req->request_id, sizeof(req->request_id), "REQ-RENEW");
-    strncpy(req->book_id, c->book_id, sizeof(req->book_id) - 1);
-    strncpy(req->copy_id, copy_id, sizeof(req->copy_id) - 1);
-    strncpy(req->member_id, member_id, sizeof(req->member_id) - 1);
+    safe_str_copy(req->book_id, c->book_id, sizeof(req->book_id));
+    safe_str_copy(req->copy_id, copy_id, sizeof(req->copy_id));
+    safe_str_copy(req->member_id, member_id, sizeof(req->member_id));
     req->action_requested = ACTION_RENEWED;
     req->created_at = time(NULL);
     req->status = STATUS_PENDING;
@@ -294,12 +312,12 @@ int pool_add_renew_request(const char *copy_id, const char *member_id) {
     c->due_date += RENEWAL_EXTENSION_SECONDS;
     c->renewal_count++;
 
-    strncpy(req->record.record_id, req->request_id, sizeof(req->record.record_id) - 1);
-    strncpy(req->record.book_id, c->book_id, sizeof(req->record.book_id) - 1);
-    strncpy(req->record.copy_id, c->copy_id, sizeof(req->record.copy_id) - 1);
-    strncpy(req->record.book_title, b ? b->title : "Unknown", sizeof(req->record.book_title) - 1);
-    strncpy(req->record.member_id, m->member_id, sizeof(req->record.member_id) - 1);
-    strncpy(req->record.member_name, m->full_name, sizeof(req->record.member_name) - 1);
+    safe_str_copy(req->record.record_id, req->request_id, sizeof(req->record.record_id));
+    safe_str_copy(req->record.book_id, c->book_id, sizeof(req->record.book_id));
+    safe_str_copy(req->record.copy_id, c->copy_id, sizeof(req->record.copy_id));
+    safe_str_copy(req->record.book_title, b ? b->title : "Unknown", sizeof(req->record.book_title));
+    safe_str_copy(req->record.member_id, m->member_id, sizeof(req->record.member_id));
+    safe_str_copy(req->record.member_name, m->full_name, sizeof(req->record.member_name));
     req->record.action = ACTION_RENEWED;
     req->record.timestamp = req->created_at;
     req->record.due_date = c->due_date;

@@ -116,7 +116,7 @@ int blockchain_add_block(const Block *b) {
         if (c && m) {
             if (r->action == ACTION_BORROWED) {
                 c->state = STATE_BORROWED;
-                strncpy(c->current_holder_id, m->member_id, sizeof(c->current_holder_id) - 1);
+                snprintf(c->current_holder_id, sizeof(c->current_holder_id), "%s", m->member_id);
                 c->borrow_timestamp = r->timestamp;
                 c->due_date = r->due_date;
                 c->renewal_count = 0;
@@ -124,14 +124,14 @@ int blockchain_add_block(const Block *b) {
             } else if (r->action == ACTION_RETURNED) {
                 if (m->active_borrows > 0) m->active_borrows--;
                 c->last_returned_time = r->timestamp;
-                strncpy(c->last_returned_member, m->member_id, sizeof(c->last_returned_member) - 1);
+                snprintf(c->last_returned_member, sizeof(c->last_returned_member), "%s", m->member_id);
 
                 /* Automatic offer to next in reservation queue */
                 char next_member[ID_MAX_LEN];
                 time_t res_date;
                 if (reservation_dequeue(c->book_id, next_member, &res_date)) {
                     c->state = STATE_RESERVED;
-                    strncpy(c->current_holder_id, next_member, sizeof(c->current_holder_id) - 1);
+                    snprintf(c->current_holder_id, sizeof(c->current_holder_id), "%s", next_member);
                     c->due_date = r->timestamp + (2 * 86400); /* 48 hours to claim reservation */
                     printf("[AUTO-OFFER] Copy %s automatically RESERVED for next member in queue: %s (Hold: 48h)\n",
                            c->copy_id, next_member);

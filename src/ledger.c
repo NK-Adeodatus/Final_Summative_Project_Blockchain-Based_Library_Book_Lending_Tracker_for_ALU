@@ -60,9 +60,9 @@ static void record_account_history_node(const char *tx_id, const char *sender, c
     if (h_sender) {
         AccountTxNode *node = (AccountTxNode *)malloc(sizeof(AccountTxNode));
         if (node) {
-            strncpy(node->tx_id, tx_id, sizeof(node->tx_id) - 1);
-            strncpy(node->sender, sender, sizeof(node->sender) - 1);
-            strncpy(node->recipient, recipient, sizeof(node->recipient) - 1);
+            snprintf(node->tx_id, sizeof(node->tx_id), "%s", tx_id);
+            snprintf(node->sender, sizeof(node->sender), "%s", sender);
+            snprintf(node->recipient, sizeof(node->recipient), "%s", recipient);
             node->amount = amount;
             node->fee = fee;
             node->nonce = nonce;
@@ -78,9 +78,9 @@ static void record_account_history_node(const char *tx_id, const char *sender, c
         if (h_recip) {
             AccountTxNode *node = (AccountTxNode *)malloc(sizeof(AccountTxNode));
             if (node) {
-                strncpy(node->tx_id, tx_id, sizeof(node->tx_id) - 1);
-                strncpy(node->sender, sender, sizeof(node->sender) - 1);
-                strncpy(node->recipient, recipient, sizeof(node->recipient) - 1);
+                snprintf(node->tx_id, sizeof(node->tx_id), "%s", tx_id);
+                snprintf(node->sender, sizeof(node->sender), "%s", sender);
+                snprintf(node->recipient, sizeof(node->recipient), "%s", recipient);
                 node->amount = amount;
                 node->fee = fee;
                 node->nonce = nonce;
@@ -116,13 +116,13 @@ int ledger_utxo_create_coinbase(const char *recipient_id, double amount, int blo
     if (!recipient_id || amount <= 0.0 || s_utxo_count >= MAX_UTXOS) return 0;
 
     UTXO *u = &s_utxos[s_utxo_count++];
-    strncpy(u->tx_id, tx_id, sizeof(u->tx_id) - 1);
+    snprintf(u->tx_id, sizeof(u->tx_id), "%s", tx_id);
     u->output_index = 0;
     u->amount = amount;
     u->is_spent = 0;
     u->block_index = block_index;
     u->created_at = time(NULL);
-    strncpy(u->recipient, recipient_id, sizeof(u->recipient) - 1);
+    snprintf(u->recipient, sizeof(u->recipient), "%s", recipient_id);
     return 1;
 }
 
@@ -134,7 +134,7 @@ double ledger_process_block_rewards(const LendingRecord *records, int record_cou
 
     char active_tx_id[SHA256_HEX_LEN];
     if (tx_id && strlen(tx_id) > 0) {
-        strncpy(active_tx_id, tx_id, SHA256_HEX_LEN);
+        snprintf(active_tx_id, sizeof(active_tx_id), "%s", tx_id);
     } else {
         char tx_payload[512];
         snprintf(tx_payload, sizeof(tx_payload), "REWARD-BLOCK-%d-%ld-%u", block_index, (long)now, ++s_tx_counter);
@@ -230,26 +230,26 @@ int ledger_utxo_transfer(const char *sender_id, const char *recipient_id, double
     /* Output 0: Recipient */
     if (s_utxo_count < MAX_UTXOS) {
         UTXO *out0 = &s_utxos[s_utxo_count++];
-        strncpy(out0->tx_id, tx_id, sizeof(out0->tx_id) - 1);
+        snprintf(out0->tx_id, sizeof(out0->tx_id), "%s", tx_id);
         out0->output_index = 0;
         out0->amount = amount;
         out0->is_spent = 0;
         out0->block_index = -1; /* Confirmed in pending transaction */
         out0->created_at = time(NULL);
-        strncpy(out0->recipient, recipient_id, sizeof(out0->recipient) - 1);
+        snprintf(out0->recipient, sizeof(out0->recipient), "%s", recipient_id);
     }
 
     /* Output 1: Change output to sender */
     double change = accumulated - total_required;
     if (change > 0.0 && s_utxo_count < MAX_UTXOS) {
         UTXO *out1 = &s_utxos[s_utxo_count++];
-        strncpy(out1->tx_id, tx_id, sizeof(out1->tx_id) - 1);
+        snprintf(out1->tx_id, sizeof(out1->tx_id), "%s", tx_id);
         out1->output_index = 1;
         out1->amount = change;
         out1->is_spent = 0;
         out1->block_index = -1;
         out1->created_at = time(NULL);
-        strncpy(out1->recipient, sender_id, sizeof(out1->recipient) - 1);
+        snprintf(out1->recipient, sizeof(out1->recipient), "%s", sender_id);
     }
 
     printf("[UTXO SUCCESS] Sent %.2f coins to %s (Fee: %.2f, Change: %.2f, Inputs Spent: %d). TxID: %.16s...\n",

@@ -185,7 +185,7 @@ int persistence_load_all(const char *filepath) {
                 g_blockchain.blocks[g_blockchain.count++] = current_block;
                 in_block = 0;
             }
-            strncpy(section, line, sizeof(section) - 1);
+            snprintf(section, sizeof(section), "%.63s", line);
             continue;
         }
 
@@ -227,7 +227,7 @@ int persistence_load_all(const char *filepath) {
                     c->condition = string_to_condition(cond);
                     c->state = string_to_copy_state(state);
                     if (strcmp(holder, "NONE") != 0) {
-                        strncpy(c->current_holder_id, holder, sizeof(c->current_holder_id) - 1);
+                        snprintf(c->current_holder_id, sizeof(c->current_holder_id), "%s", holder);
                     } else {
                         c->current_holder_id[0] = '\0';
                     }
@@ -236,7 +236,7 @@ int persistence_load_all(const char *filepath) {
                     c->renewal_count = renew;
                     c->last_returned_time = r_time;
                     if (strcmp(last_mem, "NONE") != 0) {
-                        strncpy(c->last_returned_member, last_mem, sizeof(c->last_returned_member) - 1);
+                        snprintf(c->last_returned_member, sizeof(c->last_returned_member), "%s", last_mem);
                     } else {
                         c->last_returned_member[0] = '\0';
                     }
@@ -261,12 +261,12 @@ int persistence_load_all(const char *filepath) {
                     current_block.index = idx;
                     current_block.timestamp = t;
                     current_block.record_count = 0; /* Will populate via RECORD lines */
-                    strncpy(current_block.previous_hash, prev, SHA256_HEX_LEN);
-                    strncpy(current_block.merkle_root, mrk, SHA256_HEX_LEN);
-                    strncpy(current_block.hash, hsh, SHA256_HEX_LEN);
-                    strncpy(current_block.sealed_by, sby, sizeof(current_block.sealed_by) - 1);
+                    snprintf(current_block.previous_hash, sizeof(current_block.previous_hash), "%s", prev);
+                    snprintf(current_block.merkle_root, sizeof(current_block.merkle_root), "%s", mrk);
+                    snprintf(current_block.hash, sizeof(current_block.hash), "%s", hsh);
+                    snprintf(current_block.sealed_by, sizeof(current_block.sealed_by), "%s", sby);
                     current_block.token_reward = rew;
-                    strncpy(current_block.transaction_id, txid, SHA256_HEX_LEN);
+                    snprintf(current_block.transaction_id, sizeof(current_block.transaction_id), "%s", txid);
                     current_block.nonce = nnc;
                 }
             } else if (strncmp(line, "RECORD|", 7) == 0 && in_block) {
@@ -313,7 +313,7 @@ int persistence_load_all(const char *filepath) {
                 temp_req.priority = prio;
                 temp_req.status = (RequestStatus)stat;
                 if (strcmp(reason, "NONE") != 0) {
-                    strncpy(temp_req.suspicious_reason, reason, sizeof(temp_req.suspicious_reason) - 1);
+                    snprintf(temp_req.suspicious_reason, sizeof(temp_req.suspicious_reason), "%s", reason);
                 }
                 temp_req.created_at = t_cr;
             } else if (strncmp(line, "REC|", 4) == 0 && in_req) {
